@@ -23,6 +23,14 @@ module.exports = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/api/uploads/:path*',
+      },
+    ];
+  },
   // Mejorar Fast Refresh
   reactStrictMode: true,
   // Suprimir warnings de Sass @import deprecado
