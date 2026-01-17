@@ -1,0 +1,124 @@
+@use '@/styles/vars' as *;
+
+/* Tailwind CSS v4 - debe estar antes de @apply */
+@import "tailwindcss";
+
+/* ✅ Extras puntuales encima de Preflight */
+@layer base {
+  /* Smooth scroll sólo si el usuario no pide “menos movimiento” */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+
+  /* Estructura del documento (opcional) */
+  html, body { height: 100%; } /* o elimínalo si no lo necesitas */
+  body { @apply min-h-screen font-sans text-base leading-relaxed text-neutral-800 bg-white antialiased; }
+
+  /* Pequeño ajuste que Tailwind no toca */
+  img, svg { vertical-align: middle; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
+           transition-colors focus-visible:outline-none
+           focus-visible:ring-2 focus-visible:ring-[#0A76BF]/40
+           disabled:opacity-50 disabled:pointer-events-none
+           font-semibold rounded-lg text-lg leading-tight;
+  }
+  .btn-primary   { @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800; }
+  .btn-secondary {
+    @apply bg-[#5A3D11] text-white hover:bg-[#5A3D11]/90 active:bg-[#5A3D11]/85
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5A3D11]/30;
+  }
+  .btn-secondary-outline {
+    @apply border border-[#5A3D11] text-[#5A3D11] hover:bg-[#5A3D11]/10;
+  }
+  .btn-outline   { @apply border border-red-600 text-red-600 hover:bg-red-600/10; }
+  .btn-link      { @apply p-0 h-auto underline underline-offset-4 text-red-600 hover:text-red-700; }
+
+  .btn-sm { @apply px-3 py-1.5 text-sm; }
+  .btn-lg { @apply px-5 py-3 text-base; }
+
+  .form-label {
+    @apply block text-sm font-medium mb-1;
+  }
+  .form-control {
+    @apply w-full rounded-lg border border-gray-500 px-4 py-2 text-gray-900
+      focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200;
+  }
+
+  /* Estado neutro inicial */
+  form:not(.validated) .form-control {
+    @apply border-gray-600 focus:ring-blue-400;
+  }
+
+  /* Campos inválidos (más grueso y más saturado) */
+  form.validated .form-control:invalid {
+    @apply border-4 border-pink-500 focus:ring-4 focus:ring-pink-600;
+  }
+
+  /* Campos válidos */
+  form.validated .form-control:valid {
+    @apply border-2 border-lime-400 focus:ring-4 focus:ring-lime-500;
+  }
+
+  /* Checkbox base */
+  /* stylelint-disable-next-line at-rule-no-unknown */
+  .form-checkbox {
+    @apply h-4 w-4 text-blue-500 border-gray-500 rounded focus:ring-blue-400;
+  }
+}
+
+/* * Class for elements that are only visible to the screen reader. From * https://www.paciellogroup.com/blog/2012/05/html5-accessibility-chops-hidden-and-aria-hidden/ */ .visually-hidden { clip: rect(1px 1px 1px 1px); /* IE 6/7 */ clip: rect(1px, 1px, 1px, 1px); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; margin: -1px; }  /* * For `.visually-hidden` elements that should be visible when it gains focus. */ .visible-when-focused:focus { clip: auto; height: auto; overflow: visible; position: static; white-space: normal; width: auto; margin: auto; }  /* * Style for "Skip Navigation" type links.  Should have an href linked to * a `.bypass-block-target` element. */ .bypass-block-link { position: absolute; text-decoration: none; background: #ffffcc; padding: 0.2em; z-index: 10; }  /* * We don't want the `.bypass-block-target` to have an outline on *just* focus, * since this will look strange if regular users click inside this element, * since it will look like it was tabbed into */ .bypass-block-target:focus { outline: none; }  .bypass-block-link:focus { position: absolute; text-decoration: none; background: #ffffcc; padding: 0.2em; z-index: 1000000; }  /* * We do, however, want the `.bypass-block-target` to have an outline when * it has focus and it is the target of the document (i.e. the hash tag of the * document URL is the same as the "Skip Nav" link). * * Note that this style is the same as the focus state on all the tabbable * elements.  It doesn't have to be.  WCAG 2.4.7 — Focus Visible (Level AA) * only requires that the focus state is visible, so you can have, say, the * focus state of a button different than that of a form element. */ .bypass-block-target:focus:target, [tabindex="0"]:focus, [tabindex="1"]:focus, a:focus, button:focus, input:focus { outline: none; }
+.focusoutline:focus{outline: none;}
+
+/* TYPOGRAPHY*/
+body {font-size: .875rem;color:$text;background:#FFF;font-family: $font-primary;line-height: 1.5;}
+p { margin: 0 0 1.8rem;line-height: 1.5;}
+ul, ol{margin-bottom: 1.8rem; & li{line-height: 1.5;margin-bottom: 1rem;}}
+.font-xxl, .font-xl, .font-lg, .font-md, .font-sm, .font-xs {font-family: $font-primary;font-weight: 600;color:$headings;}
+.font-xxl { font-size: 2.9375rem; font-weight: 700;}     /* .h1 */
+.font-xl  { font-size: 2rem; font-weight: 400;}     /* .h2 */
+.font-lg  { font-size: 1.75rem; }    /* .h3 */
+.font-md  { font-size: 1.5rem; }  /* .h4 */
+.font-sm  { font-size: 1.25rem; }    /* .h5 */
+.font-xs  { font-size: 1.1rem; }       /* .h6 */
+.line-heading{text-align: center;&::after{content: "";display: block;background-color: $secondary;max-width: 19rem;height: 2px;margin: 2.4rem auto 0;}}
+/* END TYPOGRAPHY*/
+
+/*All the pages*/
+#__next{min-height: 100%;display: grid;grid-template-areas:"header" "main" "footer";grid-template-columns: 1fr;grid-template-rows:auto 1fr auto;}
+html, body, #__next{scroll-behavior: auto !important;}
+.main-content{grid-area: main;}
+.content-alice{overflow: hidden;}
+.padding-top-inner{padding-top:1.4rem;}
+.padding-bottom-inner{padding-bottom:3rem;}
+.svg-inline--fa{width: 1em;}
+.anchor-space{scroll-margin-top: 4rem;}
+.img-fluid{max-width: 100%;height: auto;}
+
+/*Tablets until up*/
+@media (min-width: 768px) {
+
+}
+
+/*Laptops until up*/
+@media (min-width: 1024px) {
+    .anchor-space{scroll-margin-top: 5rem;}
+    .hidden-laptop{display: none !important;}
+}
+
+/*Desktops until up*/
+@media (min-width: 1280px) {
+  .one-col-80-percent{
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/*Large screens until up*/
+@media (min-width: 1536px) {
+
+}

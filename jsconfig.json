@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "types": [],
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["components/*"],
+      "@/styles/*": ["styles/*"],
+      "@/db/*": ["server/db/*"],
+      "@/utils/*": ["utils/*"],
+      "@/server/*": ["server/*"],
+      "@/app/*": ["app/*"]
+    }
+  },
+  "include": [
+    "app/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "server/**/*",
+    "utils/**/*",
+    "styles/**/*",
+    "*.js",
+    "*.jsx",
+    "*.ts",
+    "*.tsx"
+  ],
+  "exclude": ["node_modules", "dist", ".next", ".cache", "bundles", "out"]
+}
