@@ -12,7 +12,9 @@ import {
   Snackbar,
   CircularProgress,
   Paper,
+  IconButton,
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -42,9 +44,7 @@ export default function HomePage() {
     departureDate: null,
     port: '',
     vesselCategory: '',
-    code: '',
-    description: '',
-    unit: '',
+    codeItems: [{ code: '', description: '', unit: '' }],
     quantity: '',
     agent: '',
     comment: '',
@@ -56,22 +56,53 @@ export default function HomePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCodeChange = (event) => {
+  const handleCodeChange = (index, event) => {
     const code = event.target.value;
-    setFormData((prev) => ({ ...prev, code }));
+    setFormData((prev) => {
+      const newCodeItems = [...prev.codeItems];
+      newCodeItems[index] = { ...newCodeItems[index], code };
 
-    // Buscar el código en LIST_PORTS
-    if (code) {
-      const foundItem = LIST_PORTS.find((item) => item.code === code.trim());
-      if (foundItem) {
-        setFormData((prev) => ({
-          ...prev,
-          code,
-          description: foundItem.description || prev.description,
-          unit: foundItem.unit || prev.unit,
-        }));
+      // Buscar el código en LIST_PORTS
+      if (code) {
+        const foundItem = LIST_PORTS.find((item) => item.code === code.trim());
+        if (foundItem) {
+          newCodeItems[index] = {
+            ...newCodeItems[index],
+            code,
+            description: foundItem.description || newCodeItems[index].description,
+            unit: foundItem.unit || newCodeItems[index].unit,
+          };
+        }
       }
-    }
+
+      return { ...prev, codeItems: newCodeItems };
+    });
+  };
+
+  const handleCodeItemFieldChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newCodeItems = [...prev.codeItems];
+      newCodeItems[index] = { ...newCodeItems[index], [field]: value };
+      return { ...prev, codeItems: newCodeItems };
+    });
+  };
+
+  const handleAddCodeItem = () => {
+    setFormData((prev) => ({
+      ...prev,
+      codeItems: [...prev.codeItems, { code: '', description: '', unit: '' }],
+    }));
+  };
+
+  const handleRemoveCodeItem = (index) => {
+    setFormData((prev) => {
+      const newCodeItems = prev.codeItems.filter((_, i) => i !== index);
+      // Asegurar que siempre haya al menos un item
+      if (newCodeItems.length === 0) {
+        return { ...prev, codeItems: [{ code: '', description: '', unit: '' }] };
+      }
+      return { ...prev, codeItems: newCodeItems };
+    });
   };
 
   const handleFileChange = (event) => {
@@ -139,7 +170,7 @@ export default function HomePage() {
       return;
     }
 
-    if (!formData.port || !formData.vesselCategory || !formData.description || !formData.unit || !formData.quantity || !formData.comment) {
+    if (!formData.port || !formData.vesselCategory || !formData.quantity || !formData.comment) {
       setSnackbar({
         open: true,
         message: 'Please complete all required fields',
@@ -148,9 +179,27 @@ export default function HomePage() {
       return;
     }
 
+    // Validar que todos los codeItems tengan description y unit
+    const hasInvalidCodeItems = formData.codeItems.some(
+      (item) => !item.description || !item.unit
+    );
+    if (hasInvalidCodeItems) {
+      setSnackbar({
+        open: true,
+        message: 'Please complete all code, description, and unit fields',
+        severity: 'error',
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
         // Prepare data for Server Action
+        // Convert codeItems arrays to strings for backward compatibility
+        const codes = formData.codeItems.map((item) => item.code).filter(Boolean);
+        const descriptions = formData.codeItems.map((item) => item.description).filter(Boolean);
+        const units = formData.codeItems.map((item) => item.unit).filter(Boolean);
+
         const contactData = {
           firstName: firstName || undefined,
           lastName: lastName || undefined,
@@ -160,9 +209,9 @@ export default function HomePage() {
           departureDate: formData.departureDate?.toISOString() || undefined,
           port: formData.port || undefined,
           vesselCategory: formData.vesselCategory || undefined,
-          code: formData.code || undefined,
-          description: formData.description || undefined,
-          unit: formData.unit || undefined,
+          code: codes.length > 0 ? codes : undefined,
+          description: descriptions.length > 0 ? descriptions : undefined,
+          unit: units.length > 0 ? units : undefined,
           quantity: formData.quantity || undefined,
           agent: formData.agent || undefined,
           comment: formData.comment || undefined,
@@ -203,9 +252,7 @@ export default function HomePage() {
             departureDate: null,
             port: '',
             vesselCategory: '',
-            code: '',
-            description: '',
-            unit: '',
+            codeItems: [{ code: '', description: '', unit: '' }],
             quantity: '',
             agent: '',
             comment: '',
@@ -540,117 +587,183 @@ export default function HomePage() {
                 </TextField>
               </Box>
 
-              {/* Code and Description */}
-              <Box
-                sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}
-              >
-                <TextField
-                  fullWidth
-                  label="Code"
-                  value={formData.code}
-                  onChange={handleCodeChange}
-                  InputLabelProps={{ shrink: true }}
+              {/* Code, Description, and Unit Items */}
+              <Box sx={{ mb: 3 }}>
+                <Box
                   sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: BRAND_COLORS.striingBlue,
-                        borderWidth: '2px',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: BRAND_COLORS.aquamarine,
-                    },
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
                   }}
-                />
-                <TextField
-                  fullWidth
-                  required
-                  label="Description"
-                  value={formData.description}
-                  onChange={handleChange('description')}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: BRAND_COLORS.striingBlue,
-                        borderWidth: '2px',
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontWeight: 600,
+                      color: BRAND_COLORS.striingBlue,
+                    }}
+                  >
+                    Code, Description & Unit
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={handleAddCodeItem}
+                    sx={{
+                      backgroundColor: BRAND_COLORS.striingBlue,
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      textTransform: 'none',
+                      borderRadius: 0,
+                      px: 2,
+                      py: 0.75,
+                      '&:hover': {
+                        backgroundColor: BRAND_COLORS.aquamarine,
                       },
-                      '&:hover fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: BRAND_COLORS.aquamarine,
-                    },
-                  }}
-                />
+                    }}
+                  >
+                    + Add Code
+                  </Button>
+                </Box>
+
+                {formData.codeItems.map((item, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: 'flex',
+                      gap: 2,
+                      mb: 2,
+                      alignItems: 'flex-start',
+                      p: 2,
+                      border: `1px solid ${BRAND_COLORS.striingBlue}`,
+                      borderRadius: 0,
+                      backgroundColor: '#FFFFFF',
+                      position: 'relative',
+                    }}
+                  >
+                    <TextField
+                      fullWidth
+                      label="Code"
+                      value={item.code}
+                      onChange={(e) => handleCodeChange(index, e)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: BRAND_COLORS.striingBlue,
+                            borderWidth: '2px',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: BRAND_COLORS.aquamarine,
+                        },
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      required
+                      label="Description"
+                      value={item.description}
+                      onChange={(e) =>
+                        handleCodeItemFieldChange(index, 'description', e.target.value)
+                      }
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: BRAND_COLORS.striingBlue,
+                            borderWidth: '2px',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: BRAND_COLORS.aquamarine,
+                        },
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      required
+                      label="Unit"
+                      value={item.unit}
+                      onChange={(e) => handleCodeItemFieldChange(index, 'unit', e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: BRAND_COLORS.striingBlue,
+                            borderWidth: '2px',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: BRAND_COLORS.aquamarine,
+                        },
+                      }}
+                    />
+                    {formData.codeItems.length > 1 && (
+                      <IconButton
+                        onClick={() => handleRemoveCodeItem(index)}
+                        sx={{
+                          color: '#d32f2f',
+                          '&:hover': {
+                            backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                          },
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
+                  </Box>
+                ))}
               </Box>
 
-              {/* Unit and Quantity */}
-              <Box
-                sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}
-              >
-                <TextField
-                  fullWidth
-                  required
-                  label="Unit"
-                  value={formData.unit}
-                  onChange={handleChange('unit')}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: BRAND_COLORS.striingBlue,
-                        borderWidth: '2px',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
+              {/* Quantity */}
+              <TextField
+                fullWidth
+                required
+                label="Quantity"
+                type="number"
+                value={formData.quantity}
+                onChange={handleChange('quantity')}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  mb: 3,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: BRAND_COLORS.striingBlue,
+                      borderWidth: '2px',
                     },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: BRAND_COLORS.aquamarine,
+                    '&:hover fieldset': {
+                      borderColor: BRAND_COLORS.aquamarine,
                     },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  required
-                  label="Quantity"
-                  type="number"
-                  value={formData.quantity}
-                  onChange={handleChange('quantity')}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: BRAND_COLORS.striingBlue,
-                        borderWidth: '2px',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: BRAND_COLORS.aquamarine,
-                      },
+                    '&.Mui-focused fieldset': {
+                      borderColor: BRAND_COLORS.aquamarine,
                     },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: BRAND_COLORS.aquamarine,
-                    },
-                  }}
-                />
-              </Box>
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: BRAND_COLORS.aquamarine,
+                  },
+                }}
+              />
 
               {/* Agent */}
               <TextField

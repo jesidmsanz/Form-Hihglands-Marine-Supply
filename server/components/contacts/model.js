@@ -114,19 +114,19 @@ const ContactSchema = new mongoose.Schema(
       default: undefined,
     },
     code: {
-      type: String,
+      type: [String],
       required: false,
       comment: 'Code',
       default: undefined,
     },
     description: {
-      type: String,
+      type: [String],
       required: false,
       comment: 'Description',
       default: undefined,
     },
     unit: {
-      type: String,
+      type: [String],
       required: false,
       comment: 'Unit',
       default: undefined,

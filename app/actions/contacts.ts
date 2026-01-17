@@ -64,9 +64,9 @@ const contactCreateSchema = z.object({
   port: z.string().optional(),
   vesselCategory: z.enum(['Fishing', 'Commercial Merchant', 'Cruise', 'Military', 'Special']).optional(),
   request: z.string().optional(),
-  code: z.string().optional(),
-  description: z.string().optional(),
-  unit: z.string().optional(),
+  code: z.union([z.string(), z.array(z.string())]).optional(),
+  description: z.union([z.string(), z.array(z.string())]).optional(),
+  unit: z.union([z.string(), z.array(z.string())]).optional(),
   quantity: z.string().optional(),
   agent: z.string().optional(),
   comment: z.string().optional(),
@@ -83,8 +83,14 @@ const contactCreateSchema = z.object({
       data.departureDate &&
       data.port && typeof data.port === 'string' && data.port.trim().length > 0 &&
       data.vesselCategory &&
-      data.description && typeof data.description === 'string' && data.description.trim().length > 0 &&
-      data.unit && typeof data.unit === 'string' && data.unit.trim().length > 0 &&
+      data.description && (
+        (typeof data.description === 'string' && data.description.trim().length > 0) ||
+        (Array.isArray(data.description) && data.description.length > 0 && data.description.every((d: any) => typeof d === 'string' && d.trim().length > 0))
+      ) &&
+      data.unit && (
+        (typeof data.unit === 'string' && data.unit.trim().length > 0) ||
+        (Array.isArray(data.unit) && data.unit.length > 0 && data.unit.every((u: any) => typeof u === 'string' && u.trim().length > 0))
+      ) &&
       data.quantity && typeof data.quantity === 'string' && data.quantity.trim().length > 0 &&
       data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0
     );

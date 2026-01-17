@@ -23,6 +23,12 @@ import {
   Chip,
   IconButton,
   useTheme,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   Close,
@@ -49,6 +55,34 @@ export default function Contacts() {
       return 'Service Request';
     }
     return 'General Contact';
+  };
+
+  // Helper function to format array or string values
+  const formatArrayOrString = (value) => {
+    if (!value) return '-';
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value.join(', ') : '-';
+    }
+    return value;
+  };
+
+  // Helper function to get code items as array of objects
+  const getCodeItems = (contact) => {
+    const codes = Array.isArray(contact?.code) ? contact.code : contact?.code ? [contact.code] : [];
+    const descriptions = Array.isArray(contact?.description) ? contact.description : contact?.description ? [contact.description] : [];
+    const units = Array.isArray(contact?.unit) ? contact.unit : contact?.unit ? [contact.unit] : [];
+
+    // Get the maximum length to handle arrays of different sizes
+    const maxLength = Math.max(codes.length, descriptions.length, units.length);
+
+    if (maxLength === 0) return [];
+
+    // Create array of objects, filling missing values with empty strings
+    return Array.from({ length: maxLength }, (_, index) => ({
+      code: codes[index] || '-',
+      description: descriptions[index] || '-',
+      unit: units[index] || '-',
+    }));
   };
 
   const loadData = async () => {
@@ -375,40 +409,136 @@ export default function Contacts() {
                 </Typography>
               </Box>
 
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+              {/* Code, Description & Unit Table */}
+              <Box sx={{ gridColumn: '1 / -1', mt: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
                   <Category sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                    Code
+                    Code, Description & Unit
                   </Typography>
                 </Box>
-                <Typography variant="body2" sx={{ ml: 3, fontSize: '0.875rem' }}>
-                  {selectedContact.code || '-'}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
-                  <Category sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                    Description
-                  </Typography>
-                </Box>
-                <Typography variant="body2" sx={{ ml: 3, fontSize: '0.875rem' }}>
-                  {selectedContact.description || '-'}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
-                  <Category sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                    Unit
-                  </Typography>
-                </Box>
-                <Typography variant="body2" sx={{ ml: 3, fontSize: '0.875rem' }}>
-                  {selectedContact.unit || '-'}
-                </Typography>
+                {(() => {
+                  const codeItems = getCodeItems(selectedContact);
+                  if (codeItems.length === 0) {
+                    return (
+                      <Typography variant="body2" sx={{ ml: 3, color: 'text.disabled', fontSize: '0.875rem' }}>
+                        -
+                      </Typography>
+                    );
+                  }
+                  return (
+                    <TableContainer
+                      sx={{
+                        ml: 3,
+                        mr: 3,
+                        width: 'calc(100% - 48px)',
+                        maxWidth: 'calc(100% - 48px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        borderRadius: 0,
+                        maxHeight: 300,
+                        overflow: 'auto',
+                      }}
+                    >
+                      <Table size="small" stickyHeader sx={{ tableLayout: 'fixed', width: '100%' }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell
+                              sx={{
+                                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                py: 0.75,
+                                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                width: '15%',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                              }}
+                            >
+                              Code
+                            </TableCell>
+                            <TableCell
+                              sx={{
+                                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                py: 0.75,
+                                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                width: '65%',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                              }}
+                            >
+                              Description
+                            </TableCell>
+                            <TableCell
+                              sx={{
+                                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                py: 0.75,
+                                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                width: '20%',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                              }}
+                            >
+                              Unit
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {codeItems.map((item, index) => (
+                            <TableRow
+                              key={index}
+                              sx={{
+                                '&:hover': {
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                                },
+                                '&:last-child td': {
+                                  borderBottom: 'none',
+                                },
+                              }}
+                            >
+                              <TableCell
+                                sx={{
+                                  fontSize: '0.875rem',
+                                  py: 0.75,
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  maxWidth: 0,
+                                }}
+                              >
+                                {item.code}
+                              </TableCell>
+                              <TableCell
+                                sx={{
+                                  fontSize: '0.875rem',
+                                  py: 0.75,
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  maxWidth: 0,
+                                }}
+                              >
+                                {item.description}
+                              </TableCell>
+                              <TableCell
+                                sx={{
+                                  fontSize: '0.875rem',
+                                  py: 0.75,
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  maxWidth: 0,
+                                }}
+                              >
+                                {item.unit}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  );
+                })()}
               </Box>
 
               <Box>
