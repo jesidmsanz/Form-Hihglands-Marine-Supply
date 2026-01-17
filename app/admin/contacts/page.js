@@ -68,12 +68,24 @@ export default function Contacts() {
 
   // Helper function to get code items as array of objects
   const getCodeItems = (contact) => {
+    // If items array exists, use it directly
+    if (contact?.items && Array.isArray(contact.items) && contact.items.length > 0) {
+      return contact.items.map((item) => ({
+        code: item.code || '-',
+        description: item.description || '-',
+        unit: item.unit || '-',
+        quantity: item.quantity || '-',
+      }));
+    }
+
+    // Fallback to old format for backward compatibility
     const codes = Array.isArray(contact?.code) ? contact.code : contact?.code ? [contact.code] : [];
     const descriptions = Array.isArray(contact?.description) ? contact.description : contact?.description ? [contact.description] : [];
     const units = Array.isArray(contact?.unit) ? contact.unit : contact?.unit ? [contact.unit] : [];
+    const quantities = Array.isArray(contact?.quantity) ? contact.quantity : contact?.quantity ? [contact.quantity] : [];
 
     // Get the maximum length to handle arrays of different sizes
-    const maxLength = Math.max(codes.length, descriptions.length, units.length);
+    const maxLength = Math.max(codes.length, descriptions.length, units.length, quantities.length);
 
     if (maxLength === 0) return [];
 
@@ -82,6 +94,7 @@ export default function Contacts() {
       code: codes[index] || '-',
       description: descriptions[index] || '-',
       unit: units[index] || '-',
+      quantity: quantities[index] || '-',
     }));
   };
 
@@ -409,12 +422,12 @@ export default function Contacts() {
                 </Typography>
               </Box>
 
-              {/* Code, Description & Unit Table */}
+              {/* Code, Description, Unit & Quantity Table */}
               <Box sx={{ gridColumn: '1 / -1', mt: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
                   <Category sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                    Code, Description & Unit
+                    Code, Description, Unit & Quantity
                   </Typography>
                 </Box>
                 {(() => {
@@ -449,7 +462,7 @@ export default function Contacts() {
                                 fontSize: '0.75rem',
                                 py: 0.75,
                                 borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                width: '15%',
+                                width: '12%',
                                 wordWrap: 'break-word',
                                 overflowWrap: 'break-word',
                               }}
@@ -463,7 +476,7 @@ export default function Contacts() {
                                 fontSize: '0.75rem',
                                 py: 0.75,
                                 borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                width: '65%',
+                                width: '60%',
                                 wordWrap: 'break-word',
                                 overflowWrap: 'break-word',
                               }}
@@ -477,12 +490,27 @@ export default function Contacts() {
                                 fontSize: '0.75rem',
                                 py: 0.75,
                                 borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                width: '20%',
+                                width: '18%',
                                 wordWrap: 'break-word',
                                 overflowWrap: 'break-word',
                               }}
                             >
                               Unit
+                            </TableCell>
+                            <TableCell
+                              sx={{
+                                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                py: 0.75,
+                                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                width: '10%',
+                                textAlign: 'center',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                              }}
+                            >
+                              Quantity
                             </TableCell>
                           </TableRow>
                         </TableHead>
@@ -532,6 +560,18 @@ export default function Contacts() {
                               >
                                 {item.unit}
                               </TableCell>
+                              <TableCell
+                                sx={{
+                                  fontSize: '0.875rem',
+                                  py: 0.75,
+                                  textAlign: 'center',
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  maxWidth: 0,
+                                }}
+                              >
+                                {item.quantity}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -539,18 +579,6 @@ export default function Contacts() {
                     </TableContainer>
                   );
                 })()}
-              </Box>
-
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
-                  <Category sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                    Quantity
-                  </Typography>
-                </Box>
-                <Typography variant="body2" sx={{ ml: 3, fontSize: '0.875rem' }}>
-                  {selectedContact.quantity || '-'}
-                </Typography>
               </Box>
 
               <Box>

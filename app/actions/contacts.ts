@@ -24,8 +24,47 @@ const serializeContact = (doc: any) => {
         plain[key] = value.toString();
       } else if (Array.isArray(value)) {
         plain[key] = value.map((item: any) => {
-          if (item && typeof item === 'object' && item.constructor?.name === 'ObjectId') {
-            return item.toString();
+          if (item && typeof item === 'object') {
+            if (item.constructor?.name === 'ObjectId') {
+              return item.toString();
+            }
+            // Handle subdocuments (like items array)
+            if (item.toObject) {
+              const subObj = item.toObject({ getters: true });
+              const plainSubObj: any = {};
+              for (const subKey in subObj) {
+                if (Object.prototype.hasOwnProperty.call(subObj, subKey) && !subKey.startsWith('__')) {
+                  const subValue = subObj[subKey];
+                  if (subKey === '_id' || subKey === 'id') {
+                    plainSubObj[subKey] = subValue?.toString ? subValue.toString() : String(subValue);
+                  } else if (subValue instanceof Date) {
+                    plainSubObj[subKey] = subValue.toISOString();
+                  } else if (subValue && typeof subValue === 'object' && subValue.constructor?.name === 'ObjectId') {
+                    plainSubObj[subKey] = subValue.toString();
+                  } else {
+                    plainSubObj[subKey] = subValue;
+                  }
+                }
+              }
+              return plainSubObj;
+            }
+            // Handle plain objects
+            const plainItem: any = {};
+            for (const itemKey in item) {
+              if (Object.prototype.hasOwnProperty.call(item, itemKey) && !itemKey.startsWith('__')) {
+                const itemValue = item[itemKey];
+                if (itemKey === '_id' || itemKey === 'id') {
+                  plainItem[itemKey] = itemValue?.toString ? itemValue.toString() : String(itemValue);
+                } else if (itemValue instanceof Date) {
+                  plainItem[itemKey] = itemValue.toISOString();
+                } else if (itemValue && typeof itemValue === 'object' && itemValue.constructor?.name === 'ObjectId') {
+                  plainItem[itemKey] = itemValue.toString();
+                } else {
+                  plainItem[itemKey] = itemValue;
+                }
+              }
+            }
+            return plainItem;
           }
           return item;
         });
@@ -67,7 +106,13 @@ const contactCreateSchema = z.object({
   code: z.union([z.string(), z.array(z.string())]).optional(),
   description: z.union([z.string(), z.array(z.string())]).optional(),
   unit: z.union([z.string(), z.array(z.string())]).optional(),
-  quantity: z.string().optional(),
+  quantity: z.union([z.string(), z.array(z.string())]).optional(),
+  items: z.array(z.object({
+    code: z.string(),
+    description: z.string(),
+    unit: z.string(),
+    quantity: z.string(),
+  })).optional(),
   agent: z.string().optional(),
   comment: z.string().optional(),
   attachments: z.union([z.string(), z.array(z.string())]).optional(),
@@ -83,15 +128,11 @@ const contactCreateSchema = z.object({
       data.departureDate &&
       data.port && typeof data.port === 'string' && data.port.trim().length > 0 &&
       data.vesselCategory &&
-      data.description && (
-        (typeof data.description === 'string' && data.description.trim().length > 0) ||
-        (Array.isArray(data.description) && data.description.length > 0 && data.description.every((d: any) => typeof d === 'string' && d.trim().length > 0))
+      data.items && Array.isArray(data.items) && data.items.length > 0 && data.items.every((item: any) =>
+        item.description && typeof item.description === 'string' && item.description.trim().length > 0 &&
+        item.unit && typeof item.unit === 'string' && item.unit.trim().length > 0 &&
+        item.quantity && typeof item.quantity === 'string' && item.quantity.trim().length > 0
       ) &&
-      data.unit && (
-        (typeof data.unit === 'string' && data.unit.trim().length > 0) ||
-        (Array.isArray(data.unit) && data.unit.length > 0 && data.unit.every((u: any) => typeof u === 'string' && u.trim().length > 0))
-      ) &&
-      data.quantity && typeof data.quantity === 'string' && data.quantity.trim().length > 0 &&
       data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0
     );
   }
@@ -137,14 +178,30 @@ export async function getContactsAction(): Promise<ActionResult<any[]>> {
     await connectDB();
     const contacts = await (Contact as any).find({}).sort({ createdAt: -1 }).lean();
     // Serialize contacts to plain objects
-    const serializedContacts = contacts.map((contact: any) => ({
-      ...contact,
-      _id: contact._id?.toString(),
-      createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
-      updatedAt: contact.updatedAt instanceof Date ? contact.updatedAt.toISOString() : contact.updatedAt,
-      arrivalDate: contact.arrivalDate instanceof Date ? contact.arrivalDate.toISOString() : contact.arrivalDate,
-      departureDate: contact.departureDate instanceof Date ? contact.departureDate.toISOString() : contact.departureDate,
-    }));
+    const serializedContacts = contacts.map((contact: any) => {
+      const serialized = serializeContact(contact);
+      // Ensure items array is properly serialized
+      if (serialized?.items && Array.isArray(serialized.items)) {
+        serialized.items = serialized.items.map((item: any) => {
+          if (item && typeof item === 'object') {
+            const plainItem: any = {};
+            for (const key in item) {
+              if (Object.prototype.hasOwnProperty.call(item, key) && !key.startsWith('__')) {
+                const value = item[key];
+                if (key === '_id' || key === 'id') {
+                  plainItem[key] = value?.toString ? value.toString() : String(value);
+                } else {
+                  plainItem[key] = value;
+                }
+              }
+            }
+            return plainItem;
+          }
+          return item;
+        });
+      }
+      return serialized;
+    });
     return { success: true, data: serializedContacts };
   } catch (error) {
     console.error('Error fetching contacts:', error);

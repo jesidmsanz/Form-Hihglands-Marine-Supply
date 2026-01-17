@@ -44,8 +44,7 @@ export default function HomePage() {
     departureDate: null,
     port: '',
     vesselCategory: '',
-    codeItems: [{ code: '', description: '', unit: '' }],
-    quantity: '',
+    codeItems: [{ code: '', description: '', unit: '', quantity: '' }],
     agent: '',
     comment: '',
     file: null,
@@ -90,7 +89,7 @@ export default function HomePage() {
   const handleAddCodeItem = () => {
     setFormData((prev) => ({
       ...prev,
-      codeItems: [...prev.codeItems, { code: '', description: '', unit: '' }],
+      codeItems: [...prev.codeItems, { code: '', description: '', unit: '', quantity: '' }],
     }));
   };
 
@@ -99,7 +98,7 @@ export default function HomePage() {
       const newCodeItems = prev.codeItems.filter((_, i) => i !== index);
       // Asegurar que siempre haya al menos un item
       if (newCodeItems.length === 0) {
-        return { ...prev, codeItems: [{ code: '', description: '', unit: '' }] };
+        return { ...prev, codeItems: [{ code: '', description: '', unit: '', quantity: '' }] };
       }
       return { ...prev, codeItems: newCodeItems };
     });
@@ -170,7 +169,7 @@ export default function HomePage() {
       return;
     }
 
-    if (!formData.port || !formData.vesselCategory || !formData.quantity || !formData.comment) {
+    if (!formData.port || !formData.vesselCategory || !formData.comment) {
       setSnackbar({
         open: true,
         message: 'Please complete all required fields',
@@ -179,14 +178,14 @@ export default function HomePage() {
       return;
     }
 
-    // Validar que todos los codeItems tengan description y unit
+    // Validar que todos los codeItems tengan description, unit y quantity
     const hasInvalidCodeItems = formData.codeItems.some(
-      (item) => !item.description || !item.unit
+      (item) => !item.description || !item.unit || !item.quantity
     );
     if (hasInvalidCodeItems) {
       setSnackbar({
         open: true,
-        message: 'Please complete all code, description, and unit fields',
+        message: 'Please complete all code, description, unit, and quantity fields',
         severity: 'error',
       });
       return;
@@ -195,10 +194,15 @@ export default function HomePage() {
     startTransition(async () => {
       try {
         // Prepare data for Server Action
-        // Convert codeItems arrays to strings for backward compatibility
-        const codes = formData.codeItems.map((item) => item.code).filter(Boolean);
-        const descriptions = formData.codeItems.map((item) => item.description).filter(Boolean);
-        const units = formData.codeItems.map((item) => item.unit).filter(Boolean);
+        // Filter out empty items and send as array of objects
+        const items = formData.codeItems
+          .filter((item) => item.code || item.description || item.unit || item.quantity)
+          .map((item) => ({
+            code: item.code || '',
+            description: item.description || '',
+            unit: item.unit || '',
+            quantity: item.quantity || '',
+          }));
 
         const contactData = {
           firstName: firstName || undefined,
@@ -209,10 +213,7 @@ export default function HomePage() {
           departureDate: formData.departureDate?.toISOString() || undefined,
           port: formData.port || undefined,
           vesselCategory: formData.vesselCategory || undefined,
-          code: codes.length > 0 ? codes : undefined,
-          description: descriptions.length > 0 ? descriptions : undefined,
-          unit: units.length > 0 ? units : undefined,
-          quantity: formData.quantity || undefined,
+          items: items.length > 0 ? items : undefined,
           agent: formData.agent || undefined,
           comment: formData.comment || undefined,
           request: formData.comment || undefined, // For compatibility with existing model
@@ -252,8 +253,7 @@ export default function HomePage() {
             departureDate: null,
             port: '',
             vesselCategory: '',
-            codeItems: [{ code: '', description: '', unit: '' }],
-            quantity: '',
+            codeItems: [{ code: '', description: '', unit: '', quantity: '' }],
             agent: '',
             comment: '',
             file: null,
@@ -322,7 +322,14 @@ export default function HomePage() {
         </Box>
 
         {/* Form Section */}
-        <Container maxWidth="md" sx={{ py: { xs: 6, md: 8 } }}>
+        <Container
+          maxWidth={false}
+          sx={{
+            py: { xs: 6, md: 8 },
+            maxWidth: { xs: '100%', sm: '600px', md: '990px' },
+            px: { xs: 2, sm: 3, md: 4 },
+          }}
+        >
           <Paper
             elevation={0}
             sx={{
@@ -605,7 +612,7 @@ export default function HomePage() {
                       color: BRAND_COLORS.striingBlue,
                     }}
                   >
-                    Code, Description & Unit
+                    Code, Description, Unit & Quantity
                   </Typography>
                   <Button
                     variant="contained"
@@ -644,12 +651,12 @@ export default function HomePage() {
                     }}
                   >
                     <TextField
-                      fullWidth
                       label="Code"
                       value={item.code}
                       onChange={(e) => handleCodeChange(index, e)}
                       InputLabelProps={{ shrink: true }}
                       sx={{
+                        flex: '0 0 12.5%',
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
                             borderColor: BRAND_COLORS.striingBlue,
@@ -668,7 +675,6 @@ export default function HomePage() {
                       }}
                     />
                     <TextField
-                      fullWidth
                       required
                       label="Description"
                       value={item.description}
@@ -677,6 +683,32 @@ export default function HomePage() {
                       }
                       InputLabelProps={{ shrink: true }}
                       sx={{
+                        flex: '1 1 auto',
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: BRAND_COLORS.striingBlue,
+                            borderWidth: '2px',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: BRAND_COLORS.aquamarine,
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: BRAND_COLORS.aquamarine,
+                        },
+                      }}
+                    />
+                    <TextField
+                      required
+                      label="Unit"
+                      value={item.unit}
+                      onChange={(e) => handleCodeItemFieldChange(index, 'unit', e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        flex: '0 0 10%',
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
                             borderColor: BRAND_COLORS.striingBlue,
@@ -697,11 +729,13 @@ export default function HomePage() {
                     <TextField
                       fullWidth
                       required
-                      label="Unit"
-                      value={item.unit}
-                      onChange={(e) => handleCodeItemFieldChange(index, 'unit', e.target.value)}
+                      label="Quantity"
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => handleCodeItemFieldChange(index, 'quantity', e.target.value)}
                       InputLabelProps={{ shrink: true }}
                       sx={{
+                        maxWidth: '150px',
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
                             borderColor: BRAND_COLORS.striingBlue,
@@ -735,35 +769,6 @@ export default function HomePage() {
                   </Box>
                 ))}
               </Box>
-
-              {/* Quantity */}
-              <TextField
-                fullWidth
-                required
-                label="Quantity"
-                type="number"
-                value={formData.quantity}
-                onChange={handleChange('quantity')}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: BRAND_COLORS.striingBlue,
-                      borderWidth: '2px',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: BRAND_COLORS.aquamarine,
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: BRAND_COLORS.aquamarine,
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: BRAND_COLORS.aquamarine,
-                  },
-                }}
-              />
 
               {/* Agent */}
               <TextField

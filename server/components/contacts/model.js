@@ -132,9 +132,20 @@ const ContactSchema = new mongoose.Schema(
       default: undefined,
     },
     quantity: {
-      type: String,
+      type: [String],
       required: false,
       comment: 'Quantity',
+      default: undefined,
+    },
+    items: {
+      type: [{
+        code: String,
+        description: String,
+        unit: String,
+        quantity: String,
+      }],
+      required: false,
+      comment: 'Items array with code, description, unit and quantity',
       default: undefined,
     },
     agent: {
