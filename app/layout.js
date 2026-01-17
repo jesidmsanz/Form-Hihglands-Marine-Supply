@@ -52,6 +52,11 @@ export const metadata = {
   title: `${companyName} - Marine Supply Contact Form`,
   description: metaDescription || `Contact form for ${companyName}. Submit your marine supply requests, vessel information, and service inquiries.`,
   metadataBase: new URL(website),
+  icons: {
+    icon: '/images/logo.png',
+    shortcut: '/images/logo.png',
+    apple: '/images/logo.png',
+  },
   alternates: {
     canonical: '/',
   },

@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Box, CircularProgress, useTheme } from '@mui/material';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 
 const AdminLayout = ({ children }) => {
   const { status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
   const theme = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -15,6 +18,13 @@ const AdminLayout = ({ children }) => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && status === 'unauthenticated' && pathname !== '/admin/login') {
+      const loginUrl = `/admin/login?redirect=${encodeURIComponent(pathname)}`;
+      router.push(loginUrl);
+    }
+  }, [mounted, status, pathname, router]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -41,7 +51,19 @@ const AdminLayout = ({ children }) => {
   }
 
   if (status === 'unauthenticated') {
-    return null;
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: '#FAFAFA',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={32} sx={{ color: theme.palette.primary.main }} />
+      </Box>
+    );
   }
 
   const isLoading = status === 'loading';
