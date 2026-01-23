@@ -69,6 +69,27 @@ async function update(id, form) {
   }
 }
 
+async function statusChange({ id, status, nextAction }) {
+  try {
+    await connectDB();
+
+    const updateData = { updatedAt: new Date() };
+
+    if (status) {
+      updateData.status = status;
+    }
+
+    if (nextAction !== undefined) {
+      updateData.nextAction = nextAction || undefined;
+    }
+
+    const result = await Contact.findByIdAndUpdate(id, updateData, { new: true });
+    return result;
+  } catch (err) {
+    throw err;
+  }
+}
+
 const controllerContacts = {
   findAll,
   findAllActive,
@@ -76,5 +97,6 @@ const controllerContacts = {
   findById,
   deleteById,
   update,
+  statusChange,
 };
 export default controllerContacts;

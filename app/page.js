@@ -13,7 +13,9 @@ import {
   CircularProgress,
   Paper,
   IconButton,
+  alpha,
 } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -634,6 +636,37 @@ export default function HomePage() {
                     + Add Code
                   </Button>
                 </Box>
+
+                {/* Instrucción */}
+                <Alert
+                  icon={<InfoIcon />}
+                  severity="info"
+                  sx={{
+                    mb: 2,
+                    backgroundColor: alpha(BRAND_COLORS.aquamarine, 0.1),
+                    border: `1px solid ${BRAND_COLORS.aquamarine}`,
+                    borderRadius: 0,
+                    '& .MuiAlert-icon': {
+                      color: BRAND_COLORS.aquamarine,
+                    },
+                    '& .MuiAlert-message': {
+                      color: BRAND_COLORS.striingBlue,
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                >
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <strong>Instruction:</strong> If you don't have code or description, you must add it manually. If you don't have that information, then upload the attached file.
+                  </Typography>
+                </Alert>
 
                 {formData.codeItems.map((item, index) => (
                   <Box

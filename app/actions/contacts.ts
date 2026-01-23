@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db';
 import { Contact } from '@/server/components/contacts/model';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import controllerContacts from '@/server/components/contacts/controller';
 
 // Helper function to serialize Mongoose documents to plain objects
 const serializeContact = (doc: any) => {
@@ -82,27 +83,27 @@ const contactIdSchema = z.string().min(1, 'Contact ID is required');
 
 // Schema base flexible para ambos formularios
 const contactCreateSchema = z.object({
-  // Campos originales (formulario de contacto general)
-  Subject: z.string().optional(),
-  Procedures: z.string().optional(),
-  fullName: z.string().optional(),
-  email: z.string().email('Invalid email address').optional(),
-  phone: z.string().optional(),
-  message: z.string().optional(),
-  ipAddress: z.string().optional(),
-  url: z.string().url('Invalid URL').optional().or(z.literal('')),
-  sendInformation: z.boolean().optional(),
+    // Campos originales (formulario de contacto general)
+    Subject: z.string().optional(),
+    Procedures: z.string().optional(),
+    fullName: z.string().optional(),
+    email: z.string().email('Invalid email address').optional(),
+    phone: z.string().optional(),
+    message: z.string().optional(),
+    ipAddress: z.string().optional(),
+    url: z.string().url('Invalid URL').optional().or(z.literal('')),
+    sendInformation: z.boolean().optional(),
   token: z.string().optional(),
-  // Nuevos campos para Landing Page (formulario de servicios)
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  company: z.string().optional(),
-  vessel: z.string().optional(),
-  arrivalDate: z.string().optional(),
-  departureDate: z.string().optional(),
-  port: z.string().optional(),
+    // Nuevos campos para Landing Page (formulario de servicios)
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    company: z.string().optional(),
+    vessel: z.string().optional(),
+    arrivalDate: z.string().optional(),
+    departureDate: z.string().optional(),
+    port: z.string().optional(),
   vesselCategory: z.enum(['Fishing', 'Commercial Merchant', 'Cruise', 'Military', 'Special']).optional(),
-  request: z.string().optional(),
+    request: z.string().optional(),
   code: z.union([z.string(), z.array(z.string())]).optional(),
   description: z.union([z.string(), z.array(z.string())]).optional(),
   unit: z.union([z.string(), z.array(z.string())]).optional(),
@@ -124,18 +125,18 @@ const contactCreateSchema = z.object({
     return !!(
       data.company && typeof data.company === 'string' && data.company.trim().length > 0 &&
       data.vessel && typeof data.vessel === 'string' && data.vessel.trim().length > 0 &&
-      data.arrivalDate &&
-      data.departureDate &&
+          data.arrivalDate &&
+          data.departureDate &&
       data.port && typeof data.port === 'string' && data.port.trim().length > 0 &&
-      data.vesselCategory &&
+          data.vesselCategory &&
       data.items && Array.isArray(data.items) && data.items.length > 0 && data.items.every((item: any) =>
         item.description && typeof item.description === 'string' && item.description.trim().length > 0 &&
         item.unit && typeof item.unit === 'string' && item.unit.trim().length > 0 &&
         item.quantity && typeof item.quantity === 'string' && item.quantity.trim().length > 0
       ) &&
       data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0
-    );
-  }
+        );
+      }
 
   // Si no tiene fullName, debe tener message, request o comment
   const hasMessage = data.message && typeof data.message === 'string' && data.message.trim().length > 0;
@@ -143,7 +144,7 @@ const contactCreateSchema = z.object({
   const hasComment = data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0;
   return hasMessage || hasRequest || hasComment;
 }, {
-  message: 'Please fill all required fields',
+      message: 'Please fill all required fields',
 });
 
 const contactUpdateSchema = z.object({
@@ -392,5 +393,62 @@ export async function deleteContactAction(id: string): Promise<ActionResult<void
   } catch (error) {
     console.error('Error deleting contact:', error);
     return { success: false, error: 'Failed to delete contact' };
+  }
+}
+
+/**
+ * Actualizar status y nextAction de un contacto (Admin only)
+ */
+const statusSchema = z.enum(['pending', 'approved', 'rejected', 'spam', 'completed']);
+const nextActionSchema = z.enum(['quote']).optional().nullable();
+
+export async function updateContactStatusAction(
+  id: string,
+  status?: string,
+  nextAction?: string | null
+): Promise<ActionResult<any>> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.roles?.includes('admin')) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const idValidation = contactIdSchema.safeParse(id);
+    if (!idValidation.success) {
+      return { success: false, error: idValidation.error.issues[0].message };
+    }
+
+    const updateData: any = {};
+
+    if (status !== undefined) {
+      const statusValidation = statusSchema.safeParse(status);
+      if (!statusValidation.success) {
+        return { success: false, error: 'Invalid status value' };
+      }
+      updateData.status = status;
+    }
+
+    if (nextAction !== undefined) {
+      const nextActionValidation = nextActionSchema.safeParse(nextAction);
+      if (!nextActionValidation.success && nextAction !== null) {
+        return { success: false, error: 'Invalid nextAction value' };
+      }
+      updateData.nextAction = nextAction || undefined;
+    }
+
+    const updatedContact = await controllerContacts.statusChange({
+      id,
+      status: updateData.status,
+      nextAction: updateData.nextAction,
+    });
+
+    if (!updatedContact) {
+      return { success: false, error: 'Contact not found' };
+    }
+
+    return { success: true, data: serializeContact(updatedContact) };
+  } catch (error) {
+    console.error('Error updating contact status:', error);
+    return { success: false, error: 'Failed to update contact status' };
   }
 }

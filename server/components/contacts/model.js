@@ -166,6 +166,20 @@ const ContactSchema = new mongoose.Schema(
       comment: 'File attachments URLs',
       default: undefined,
     },
+    status: {
+      type: String,
+      required: false,
+      enum: ['pending', 'approved', 'rejected', 'spam', 'completed'],
+      comment: 'Contact status',
+      default: 'pending',
+    },
+    nextAction: {
+      type: String,
+      required: false,
+      enum: ['quote'],
+      comment: 'Next action required',
+      default: undefined,
+    },
     createdAt: {
       type: Date,
       required: false,

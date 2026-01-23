@@ -7,7 +7,7 @@ import MaterialTable from '@/components/admin/MaterialTable';
 const AdminLayout = dynamic(() => import('@/components/admin/Layout'), {
   ssr: false,
 });
-import { getContactsAction, getContactByIdAction } from '@/app/actions/contacts';
+import { getContactsAction, getContactByIdAction, updateContactStatusAction } from '@/app/actions/contacts';
 import { format } from 'date-fns';
 import {
   Box,
@@ -29,6 +29,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Close,
@@ -48,6 +54,9 @@ export default function Contacts() {
   const [showModal, setShowModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [statusValue, setStatusValue] = useState('pending');
+  const [nextActionValue, setNextActionValue] = useState(false);
+  const [savingStatus, setSavingStatus] = useState(false);
 
   // Helper function to determine contact type
   const getContactType = (item) => {
@@ -124,6 +133,8 @@ export default function Contacts() {
       vessel: item.vessel || '',
       port: item.port || '',
       vesselCategory: item.vesselCategory || '',
+      status: item.status || 'pending',
+      nextAction: item.nextAction || null,
     }));
 
     setLoading(false);
@@ -140,12 +151,38 @@ export default function Contacts() {
 
     if (result.success && result.data) {
       setSelectedContact(result.data);
+      setStatusValue(result.data.status || 'pending');
+      setNextActionValue(result.data.nextAction === 'quote');
     }
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedContact(null);
+    setStatusValue('pending');
+    setNextActionValue(false);
+  };
+
+  const handleSaveStatus = async () => {
+    if (!selectedContact) return;
+
+    setSavingStatus(true);
+    // Si el status es completed, forzar nextAction a null
+    const finalNextAction = statusValue === 'completed' ? null : (nextActionValue ? 'quote' : null);
+
+    const result = await updateContactStatusAction(
+      selectedContact._id,
+      statusValue,
+      finalNextAction
+    );
+
+    setSavingStatus(false);
+
+    if (result.success && result.data) {
+      setSelectedContact(result.data);
+      // Recargar la lista
+      loadData();
+    }
   };
 
   // Cargar datos al montar el componente (solo en cliente)
@@ -153,11 +190,65 @@ export default function Contacts() {
     loadData();
   }, []);
 
+  // Helper function to get status color
+  const getStatusColor = (status) => {
+    const colors = {
+      pending: 'default',
+      approved: 'success',
+      rejected: 'error',
+      spam: 'warning',
+      completed: 'info',
+    };
+    return colors[status] || 'default';
+  };
+
+  // Helper function to get status label
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      spam: 'Spam',
+      completed: 'Completed',
+    };
+    return labels[status] || status;
+  };
+
   const columns = useMemo(
     () => [
       {
         accessorKey: 'createdAt',
         header: 'Date',
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        Cell: ({ row }) => {
+          const status = row.original.status || 'pending';
+          const nextAction = row.original.nextAction;
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Chip
+                label={getStatusLabel(status)}
+                size="small"
+                color={getStatusColor(status)}
+                sx={{ fontSize: '0.75rem', height: '24px' }}
+              />
+              {nextAction === 'quote' && status !== 'completed' && (
+                <Chip
+                  label="Quote"
+                  size="small"
+                  sx={{
+                    fontSize: '0.7rem',
+                    height: '20px',
+                    backgroundColor: alpha(theme.palette.info.main, 0.1),
+                    color: 'info.main',
+                  }}
+                />
+              )}
+            </Box>
+          );
+        },
       },
       {
         accessorKey: 'type',
@@ -184,7 +275,7 @@ export default function Contacts() {
         header: 'ETA',
       },
     ],
-    []
+    [theme]
   );
 
   return (
@@ -662,8 +753,63 @@ export default function Contacts() {
             p: 3,
             borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
             backgroundColor: alpha(theme.palette.grey[50], 0.5),
+            display: 'flex',
+            justifyContent: 'space-between',
           }}
         >
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {selectedContact && (
+              <>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusValue}
+                    label="Status"
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      setStatusValue(newStatus);
+                      // Si se cambia a completed, limpiar nextAction
+                      if (newStatus === 'completed') {
+                        setNextActionValue(false);
+                      }
+                    }}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    <MenuItem value="pending">Pending</MenuItem>
+                    <MenuItem value="approved">Approved</MenuItem>
+                    <MenuItem value="rejected">Rejected</MenuItem>
+                    <MenuItem value="spam">Spam</MenuItem>
+                    <MenuItem value="completed">Completed</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={nextActionValue && statusValue !== 'completed'}
+                      onChange={(e) => setNextActionValue(e.target.checked)}
+                      disabled={statusValue === 'completed'}
+                      size="small"
+                    />
+                  }
+                  label="Quote"
+                  sx={{ ml: 1 }}
+                />
+                <Button
+                  onClick={handleSaveStatus}
+                  variant="contained"
+                  disabled={savingStatus}
+                  sx={{
+                    textTransform: 'none',
+                    borderRadius: '12px',
+                    px: 3,
+                    fontWeight: 500,
+                  }}
+                >
+                  {savingStatus ? <CircularProgress size={20} /> : 'Save Status'}
+                </Button>
+              </>
+            )}
+          </Box>
           <Button
             onClick={handleCloseModal}
             variant="outlined"
