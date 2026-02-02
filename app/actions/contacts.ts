@@ -83,27 +83,27 @@ const contactIdSchema = z.string().min(1, 'Contact ID is required');
 
 // Schema base flexible para ambos formularios
 const contactCreateSchema = z.object({
-    // Campos originales (formulario de contacto general)
-    Subject: z.string().optional(),
-    Procedures: z.string().optional(),
-    fullName: z.string().optional(),
-    email: z.string().email('Invalid email address').optional(),
-    phone: z.string().optional(),
-    message: z.string().optional(),
-    ipAddress: z.string().optional(),
-    url: z.string().url('Invalid URL').optional().or(z.literal('')),
-    sendInformation: z.boolean().optional(),
+  // Campos originales (formulario de contacto general)
+  Subject: z.string().optional(),
+  Procedures: z.string().optional(),
+  fullName: z.string().optional(),
+  email: z.string().email('Invalid email address').optional(),
+  phone: z.string().optional(),
+  message: z.string().optional(),
+  ipAddress: z.string().optional(),
+  url: z.string().url('Invalid URL').optional().or(z.literal('')),
+  sendInformation: z.boolean().optional(),
   token: z.string().optional(),
-    // Nuevos campos para Landing Page (formulario de servicios)
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    company: z.string().optional(),
-    vessel: z.string().optional(),
-    arrivalDate: z.string().optional(),
-    departureDate: z.string().optional(),
-    port: z.string().optional(),
+  // Nuevos campos para Landing Page (formulario de servicios)
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  company: z.string().optional(),
+  vessel: z.string().optional(),
+  arrivalDate: z.string().optional(),
+  departureDate: z.string().optional(),
+  port: z.string().optional(),
   vesselCategory: z.enum(['Fishing', 'Commercial Merchant', 'Cruise', 'Military', 'Special']).optional(),
-    request: z.string().optional(),
+  request: z.string().optional(),
   code: z.union([z.string(), z.array(z.string())]).optional(),
   description: z.union([z.string(), z.array(z.string())]).optional(),
   unit: z.union([z.string(), z.array(z.string())]).optional(),
@@ -122,21 +122,64 @@ const contactCreateSchema = z.object({
 
   // Si tiene fullName, valida los campos requeridos del formulario
   if (hasFullName) {
-    return !!(
-      data.company && typeof data.company === 'string' && data.company.trim().length > 0 &&
-      data.vessel && typeof data.vessel === 'string' && data.vessel.trim().length > 0 &&
-          data.arrivalDate &&
-          data.departureDate &&
-      data.port && typeof data.port === 'string' && data.port.trim().length > 0 &&
-          data.vesselCategory &&
-      data.items && Array.isArray(data.items) && data.items.length > 0 && data.items.every((item: any) =>
+    // Verificar si hay attachments (incluyendo 'pending' que indica que hay un archivo que se subirá después)
+    const hasAttachments = data.attachments && (
+      (Array.isArray(data.attachments) && data.attachments.length > 0) ||
+      (typeof data.attachments === 'string' && data.attachments.trim().length > 0)
+    );
+
+    // Si NO hay attachments, validar que tenga items completos
+    if (!hasAttachments) {
+      // Verificar que tenga items completos (code, description, unit, quantity)
+      const hasCompleteItems = data.items && Array.isArray(data.items) && data.items.length > 0 && data.items.some((item: any) =>
+        item.code && typeof item.code === 'string' && item.code.trim().length > 0 &&
         item.description && typeof item.description === 'string' && item.description.trim().length > 0 &&
         item.unit && typeof item.unit === 'string' && item.unit.trim().length > 0 &&
         item.quantity && typeof item.quantity === 'string' && item.quantity.trim().length > 0
-      ) &&
-      data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0
-        );
+      );
+
+      // Debe tener items completos si no hay attachments
+      if (!hasCompleteItems) {
+        return false;
       }
+
+      // Si tiene items, validar que todos los items tengan description, unit y quantity
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        const hasInvalidItems = data.items.some((item: any) => {
+          // Si tiene code, debe tener description, unit y quantity
+          if (item.code && typeof item.code === 'string' && item.code.trim().length > 0) {
+            return !(
+              item.description && typeof item.description === 'string' && item.description.trim().length > 0 &&
+              item.unit && typeof item.unit === 'string' && item.unit.trim().length > 0 &&
+              item.quantity && typeof item.quantity === 'string' && item.quantity.trim().length > 0
+            );
+          }
+          // Si no tiene code pero tiene description, unit o quantity, debe tenerlos todos
+          if (item.description || item.unit || item.quantity) {
+            return !(
+              item.description && typeof item.description === 'string' && item.description.trim().length > 0 &&
+              item.unit && typeof item.unit === 'string' && item.unit.trim().length > 0 &&
+              item.quantity && typeof item.quantity === 'string' && item.quantity.trim().length > 0
+            );
+          }
+          return false;
+        });
+        if (hasInvalidItems) {
+          return false;
+        }
+      }
+    }
+
+    return !!(
+      data.company && typeof data.company === 'string' && data.company.trim().length > 0 &&
+      data.vessel && typeof data.vessel === 'string' && data.vessel.trim().length > 0 &&
+      data.arrivalDate &&
+      data.departureDate &&
+      data.port && typeof data.port === 'string' && data.port.trim().length > 0 &&
+      data.vesselCategory &&
+      data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0
+    );
+  }
 
   // Si no tiene fullName, debe tener message, request o comment
   const hasMessage = data.message && typeof data.message === 'string' && data.message.trim().length > 0;
@@ -144,7 +187,7 @@ const contactCreateSchema = z.object({
   const hasComment = data.comment && typeof data.comment === 'string' && data.comment.trim().length > 0;
   return hasMessage || hasRequest || hasComment;
 }, {
-      message: 'Please fill all required fields',
+  message: 'Please fill all required fields. You must either provide complete items (code, description, unit, quantity) or upload a file.',
 });
 
 const contactUpdateSchema = z.object({

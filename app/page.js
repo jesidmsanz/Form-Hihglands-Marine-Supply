@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -40,6 +40,8 @@ export default function HomePage() {
     fullName: '',
     firstName: '',
     lastName: '',
+    email: '',
+    phone: '',
     company: '',
     vessel: '',
     arrivalDate: null,
@@ -180,17 +182,44 @@ export default function HomePage() {
       return;
     }
 
-    // Validar que todos los codeItems tengan description, unit y quantity
-    const hasInvalidCodeItems = formData.codeItems.some(
-      (item) => !item.description || !item.unit || !item.quantity
-    );
-    if (hasInvalidCodeItems) {
-      setSnackbar({
-        open: true,
-        message: 'Please complete all code, description, unit, and quantity fields',
-        severity: 'error',
-      });
-      return;
+    // Si NO hay archivo, validar que haya items completos
+    if (!formData.file) {
+      // Validar que todos los codeItems tengan description, unit y quantity si tienen code
+      const hasInvalidCodeItems = formData.codeItems.some(
+        (item) => {
+          // Si tiene code, debe tener description, unit y quantity
+          if (item.code && item.code.trim()) {
+            return !item.description || !item.unit || !item.quantity;
+          }
+          // Si no tiene code pero tiene description, unit o quantity, debe tenerlos todos
+          if (item.description || item.unit || item.quantity) {
+            return !item.description || !item.unit || !item.quantity;
+          }
+          return false;
+        }
+      );
+      if (hasInvalidCodeItems) {
+        setSnackbar({
+          open: true,
+          message: 'Please complete all code, description, unit, and quantity fields',
+          severity: 'error',
+        });
+        return;
+      }
+
+      // Validar que haya al menos un item completo
+      const hasCompleteItemsCheck = formData.codeItems.some(
+        (item) => item.code && item.code.trim() && item.description && item.description.trim() && item.unit && item.unit.trim() && item.quantity && item.quantity.trim()
+      );
+
+      if (!hasCompleteItemsCheck) {
+        setSnackbar({
+          open: true,
+          message: 'Please either fill in at least one complete item (code, description, unit, quantity) or upload a file',
+          severity: 'error',
+        });
+        return;
+      }
     }
 
     startTransition(async () => {
@@ -209,6 +238,8 @@ export default function HomePage() {
         const contactData = {
           firstName: firstName || undefined,
           lastName: lastName || undefined,
+          email: formData.email || undefined,
+          phone: formData.phone || undefined,
           company: formData.company || undefined,
           vessel: formData.vessel || undefined,
           arrivalDate: formData.arrivalDate?.toISOString() || undefined,
@@ -221,6 +252,8 @@ export default function HomePage() {
           request: formData.comment || undefined, // For compatibility with existing model
           message: formData.comment || undefined, // For compatibility with existing model
           fullName: fullName || undefined,
+          // Include attachments placeholder if file will be uploaded (for validation)
+          attachments: formData.file ? ['pending'] : undefined,
         };
 
         const result = await createContactActionWithObject(contactData);
@@ -249,6 +282,8 @@ export default function HomePage() {
             fullName: '',
             firstName: '',
             lastName: '',
+            email: '',
+            phone: '',
             company: '',
             vessel: '',
             arrivalDate: null,
@@ -287,9 +322,34 @@ export default function HomePage() {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  // Calcular si hay items completos para evitar problemas de hidratación
+  const hasCompleteItems = useMemo(() => {
+    return formData.codeItems.some(
+      (item) =>
+        item.code && item.code.trim() &&
+        item.description && item.description.trim() &&
+        item.unit && item.unit.trim() &&
+        item.quantity && item.quantity.trim()
+    );
+  }, [formData.codeItems]);
+
+  // Calcular el texto del botón de file upload
+  const fileUploadButtonText = useMemo(() => {
+    if (formData.file) {
+      return `File: ${formData.file.name}`;
+    }
+    return hasCompleteItems
+      ? 'Upload File (Excel, PDF, or Image)'
+      : 'Upload File (Excel, PDF, or Image) *';
+  }, [formData.file, hasCompleteItems]);
+
+  // Determinar si los campos son requeridos (solo si NO hay archivo)
+  const areItemsRequired = !formData.file;
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box
+        suppressHydrationWarning
         sx={{
           minHeight: '100vh',
           backgroundColor: '#FAFAFA',
@@ -388,6 +448,62 @@ export default function HomePage() {
                   },
                 }}
               />
+
+              {/* Email and Phone */}
+              <Box
+                sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}
+              >
+                <TextField
+                  fullWidth
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange('email')}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: BRAND_COLORS.striingBlue,
+                        borderWidth: '2px',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: BRAND_COLORS.aquamarine,
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: BRAND_COLORS.aquamarine,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: BRAND_COLORS.aquamarine,
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange('phone')}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: BRAND_COLORS.striingBlue,
+                        borderWidth: '2px',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: BRAND_COLORS.aquamarine,
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: BRAND_COLORS.aquamarine,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: BRAND_COLORS.aquamarine,
+                    },
+                  }}
+                />
+              </Box>
 
               {/* Company and Vessel Name */}
               <Box
@@ -708,7 +824,7 @@ export default function HomePage() {
                       }}
                     />
                     <TextField
-                      required
+                      required={areItemsRequired}
                       label="Description"
                       value={item.description}
                       onChange={(e) =>
@@ -735,7 +851,7 @@ export default function HomePage() {
                       }}
                     />
                     <TextField
-                      required
+                      required={areItemsRequired}
                       label="Unit"
                       value={item.unit}
                       onChange={(e) => handleCodeItemFieldChange(index, 'unit', e.target.value)}
@@ -761,7 +877,7 @@ export default function HomePage() {
                     />
                     <TextField
                       fullWidth
-                      required
+                      required={areItemsRequired}
                       label="Quantity"
                       type="number"
                       value={item.quantity}
@@ -891,7 +1007,7 @@ export default function HomePage() {
                       },
                     }}
                   >
-                    {formData.file ? `File: ${formData.file.name}` : 'Upload File (Excel, PDF, or Image)'}
+                    {fileUploadButtonText}
                   </Button>
                 </label>
                 {formData.file && (

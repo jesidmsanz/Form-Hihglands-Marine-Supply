@@ -9,6 +9,7 @@ const AdminLayout = dynamic(() => import('@/components/admin/Layout'), {
 });
 import { getContactsAction, getContactByIdAction, updateContactStatusAction } from '@/app/actions/contacts';
 import { format } from 'date-fns';
+import { formatPhoneText } from '@/utils/utilities/stringUtils';
 import {
   Box,
   Paper,
@@ -45,6 +46,8 @@ import {
   DirectionsBoat,
   LocationOn,
   AttachFile,
+  Email,
+  Phone,
 } from '@mui/icons-material';
 
 export default function Contacts() {
@@ -425,6 +428,30 @@ export default function Contacts() {
 
               <Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+                  <Email sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                    Email
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ ml: 3, fontSize: '0.875rem' }}>
+                  {selectedContact.email || '-'}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+                  <Phone sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                    Phone
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ ml: 3, fontSize: '0.875rem' }}>
+                  {selectedContact.phone ? formatPhoneText(selectedContact.phone) : '-'}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
                   <Business sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
                     Company
@@ -709,35 +736,49 @@ export default function Contacts() {
                 </Box>
               )}
 
-              {selectedContact.attachments && selectedContact.attachments.length > 0 && (
-                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' }, mt: 0.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
-                    <AttachFile sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                      Attachments ({selectedContact.attachments.length})
-                    </Typography>
+              {selectedContact.attachments && selectedContact.attachments.length > 0 && (() => {
+                // Filtrar "pending" y otros valores no válidos
+                const validAttachments = selectedContact.attachments.filter(
+                  (attachment) =>
+                    attachment &&
+                    typeof attachment === 'string' &&
+                    attachment.trim() !== '' &&
+                    attachment !== 'pending' &&
+                    !attachment.startsWith('pending')
+                );
+
+                if (validAttachments.length === 0) return null;
+
+                return (
+                  <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' }, mt: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
+                      <AttachFile sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                        Attachments ({validAttachments.length})
+                      </Typography>
+                    </Box>
+                    <Box sx={{ ml: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {validAttachments.map((attachment, index) => (
+                        <Box
+                          key={index}
+                          component="a"
+                          href={attachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': { textDecoration: 'underline' },
+                            fontSize: '0.8125rem',
+                          }}
+                        >
+                          {attachment}
+                        </Box>
+                      ))}
+                    </Box>
                   </Box>
-                  <Box sx={{ ml: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {selectedContact.attachments.map((attachment, index) => (
-                      <Box
-                        key={index}
-                        component="a"
-                        href={attachment}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: 'primary.main',
-                          textDecoration: 'none',
-                          '&:hover': { textDecoration: 'underline' },
-                          fontSize: '0.8125rem',
-                        }}
-                      >
-                        {attachment}
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
+                );
+              })()}
             </Box>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8 }}>
