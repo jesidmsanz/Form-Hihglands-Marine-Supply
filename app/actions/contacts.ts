@@ -350,6 +350,92 @@ export async function createContactActionWithObject(
     const newContact = new (Contact as any)(contactData);
     const savedContact = await newContact.save();
 
+    // Enviar email de confirmación al usuario si tiene email
+    if (validationResult.data.email && validationResult.data.email.trim()) {
+      try {
+        const { sendEmail } = await import('@/utils/smtpEmail');
+        const companyName = process.env.NEXT_PUBLIC_NAME_COMPANY || 'HighLands Marine Supply';
+
+        const fullName = validationResult.data.fullName || 'Customer';
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <p>Dear ${fullName},</p>
+              <p>Thank you for submitting your service request. We have successfully received your form and our team is now reviewing the information you provided. If any additional details are needed, we will contact you directly.</p>
+              <p>We appreciate your trust and will follow up with you as soon as your request progresses.</p>
+              <p>Best regards,</p>
+              <p>Highlands Marine Supply<br>Operations Team</p>
+            </div>
+          </body>
+          </html>
+        `;
+        await sendEmail({
+          fromName: companyName,
+          to: validationResult.data.email,
+          subject: `Highlands Marine Supply | Your Service Request Has Been Received`,
+          html: emailHtml,
+        });
+      } catch (emailError) {
+        // No fallar el guardado si el email falla, solo loguear el error
+        console.error('Error sending confirmation email:', emailError);
+      }
+    }
+
+    // Enviar email de notificación al equipo
+    const teamEmail = process.env.SMTP_TEAM_EMAIL || process.env.NEXT_PUBLIC_EMAIL_CONTACT;
+    if (teamEmail && teamEmail.trim()) {
+      try {
+        const { sendEmail } = await import('@/utils/smtpEmail');
+        const companyName = process.env.NEXT_PUBLIC_NAME_COMPANY || 'HighLands Marine Supply';
+
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const adminUrl = `${baseUrl}/admin/contacts`;
+        const contactId = savedContact._id?.toString() || savedContact.id?.toString();
+
+        const teamEmailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              a { color: #0F2A55; text-decoration: underline; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <p>Hello Team,</p>
+              <p>A new service request has just been submitted through the online form. Please review the details at your earliest convenience and proceed according to the standard workflow.</p>
+              <p>If any clarification is required, feel free to reach out to the requester directly.</p>
+              <p>Regards,<br>Automated Notification System</p>
+              <p><a href="${adminUrl}">View details in admin panel</a></p>
+            </div>
+          </body>
+          </html>
+        `;
+
+        await sendEmail({
+          fromName: companyName,
+          to: teamEmail,
+          subject: `Highlands Marine Supply | New Service Request Submitted`,
+          html: teamEmailHtml,
+        });
+      } catch (teamEmailError) {
+        // No fallar el guardado si el email falla, solo loguear el error
+        console.error('Error sending team notification email:', teamEmailError);
+      }
+    }
+
     // Serialize to plain object for client
     const serialized = serializeContact(savedContact);
     return { success: true, data: serialized };
