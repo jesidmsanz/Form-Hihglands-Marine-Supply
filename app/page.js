@@ -706,6 +706,9 @@ export default function HomePage() {
                   <MenuItem value="Cruise">Cruise</MenuItem>
                   <MenuItem value="Military">Military</MenuItem>
                   <MenuItem value="Special">Special</MenuItem>
+                  <MenuItem value="Container">Container</MenuItem>
+                  <MenuItem value="Tanker">Tanker</MenuItem>
+                  <MenuItem value="RoRo">RoRo</MenuItem>
                 </TextField>
               </Box>
 
