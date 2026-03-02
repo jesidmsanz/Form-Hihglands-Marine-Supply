@@ -1025,8 +1025,8 @@ export default function HomePage() {
                 )}
               </Box>
 
-              {/* Submit Button */}
-              <Button
+                         {/* Submit Button */}
+                         <Button
                 type="submit"
                 fullWidth
                 variant="contained"
@@ -1054,6 +1054,119 @@ export default function HomePage() {
                   'Submit Request'
                 )}
               </Button>
+
+                          {/* Contact Information */}
+                          <Box
+                sx={{
+                  mt: 4,
+                  pt: 3,
+                  borderTop: `2px solid ${BRAND_COLORS.striingBlue}`,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: { xs: 2, md: 4 },
+                  flexDirection: { xs: 'column', md: 'row' },
+                }}
+              >
+                {/* Phone Numbers */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontWeight: 700,
+                      color: BRAND_COLORS.striingBlue,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    Office:
+                  </Typography>
+                  <a
+                    href="tel:+50765283443"
+                    style={{
+                      color: BRAND_COLORS.aquamarine,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    +507 6528-3443
+                  </a>
+                  <Typography
+                    sx={{
+                      color: BRAND_COLORS.striingBlue,
+                      mx: 0.5,
+                      fontWeight: 300,
+                    }}
+                  >
+                    |
+                  </Typography>
+                  <a
+                    href="tel:+5073434320"
+                    style={{
+                      color: BRAND_COLORS.aquamarine,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    +507 343-4320
+                  </a>
+                </Box>
+
+                {/* Divider - solo visible en desktop */}
+                <Typography
+                  sx={{
+                    color: BRAND_COLORS.striingBlue,
+                    fontWeight: 300,
+                    fontSize: '1.2rem',
+                    display: { xs: 'none', md: 'block' },
+                  }}
+                >
+                  |
+                </Typography>
+
+                {/* Email */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontWeight: 700,
+                      color: BRAND_COLORS.striingBlue,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    Email:
+                  </Typography>
+                  <a
+                    href="mailto:sales@highlandsmarinesupply.com"
+                    style={{
+                      color: BRAND_COLORS.aquamarine,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-montserrat), sans-serif',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    sales@highlandsmarinesupply.com
+                  </a>
+                </Box>
+              </Box>
             </Box>
           </Paper>
         </Container>
