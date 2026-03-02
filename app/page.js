@@ -27,7 +27,6 @@ import Image from 'next/image';
 
 // Colores de la marca HighLands
 const BRAND_COLORS = {
-  striingBlue: '#FFFFFF',
   aquamarine: '#47C0AC',
   striingBlue: '#0F2A55',
   white: '#FFFFFF',
@@ -251,9 +250,7 @@ export default function HomePage() {
           comment: formData.comment || undefined,
           request: formData.comment || undefined, // For compatibility with existing model
           message: formData.comment || undefined, // For compatibility with existing model
-          fullName: fullName || undefined,
-          // Include attachments placeholder if file will be uploaded (for validation)
-          attachments: formData.file ? ['pending'] : undefined,
+          fullName: fullName || undefined
         };
 
         const result = await createContactActionWithObject(contactData);

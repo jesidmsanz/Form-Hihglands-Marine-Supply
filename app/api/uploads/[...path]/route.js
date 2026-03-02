@@ -1,19 +1,30 @@
 import { NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import { join } from 'path';
-import { existsSync } from 'fs';
 
 export async function GET(request, { params }) {
     try {
-        // Reconstruir la ruta del archivo desde los parámetros
-        const pathSegments = params.path || [];
+        // ✅ FIX: await params porque es una Promise en Next.js 13+
+        const resolvedParams = await params;
+        const pathSegments = resolvedParams.path || [];
         const filePath = pathSegments.join('/');
+
+        // Validar que no intenten acceder a rutas peligrosas
+        if (filePath.includes('..') || filePath.startsWith('/')) {
+            return new NextResponse('Invalid path', { status: 400 });
+        }
 
         // Construir la ruta completa del archivo en public/uploads
         const fullPath = join(process.cwd(), 'public', 'uploads', filePath);
 
-        // Verificar que el archivo existe
-        if (!existsSync(fullPath)) {
+        // ✅ FIX: Verificar que es un ARCHIVO, no un directorio
+        try {
+            const stats = await stat(fullPath);
+            if (stats.isDirectory()) {
+                console.error('Path is a directory, not a file:', fullPath);
+                return new NextResponse('File not found', { status: 404 });
+            }
+        } catch (err) {
             console.error('File not found:', fullPath);
             return new NextResponse('File not found', { status: 404 });
         }
@@ -51,4 +62,3 @@ export async function GET(request, { params }) {
         return new NextResponse('Error serving file', { status: 500 });
     }
 }
-
