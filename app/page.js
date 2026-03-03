@@ -184,19 +184,17 @@ export default function HomePage() {
     // Si NO hay archivo, validar que haya items completos
     if (!formData.file) {
       // Validar que todos los codeItems tengan description, unit y quantity si tienen code
-      const hasInvalidCodeItems = formData.codeItems.some(
-        (item) => {
-          // Si tiene code, debe tener description, unit y quantity
-          if (item.code && item.code.trim()) {
-            return !item.description || !item.unit || !item.quantity;
-          }
-          // Si no tiene code pero tiene description, unit o quantity, debe tenerlos todos
-          if (item.description || item.unit || item.quantity) {
-            return !item.description || !item.unit || !item.quantity;
-          }
-          return false;
+      const hasInvalidCodeItems = formData.codeItems.some((item) => {
+        // Si tiene code, debe tener description, unit y quantity
+        if (item.code && item.code.trim()) {
+          return !item.description || !item.unit || !item.quantity;
         }
-      );
+        // Si no tiene code pero tiene description, unit o quantity, debe tenerlos todos
+        if (item.description || item.unit || item.quantity) {
+          return !item.description || !item.unit || !item.quantity;
+        }
+        return false;
+      });
       if (hasInvalidCodeItems) {
         setSnackbar({
           open: true,
@@ -208,13 +206,22 @@ export default function HomePage() {
 
       // Validar que haya al menos un item completo
       const hasCompleteItemsCheck = formData.codeItems.some(
-        (item) => item.code && item.code.trim() && item.description && item.description.trim() && item.unit && item.unit.trim() && item.quantity && item.quantity.trim()
+        (item) =>
+          item.code &&
+          item.code.trim() &&
+          item.description &&
+          item.description.trim() &&
+          item.unit &&
+          item.unit.trim() &&
+          item.quantity &&
+          item.quantity.trim()
       );
 
       if (!hasCompleteItemsCheck) {
         setSnackbar({
           open: true,
-          message: 'Please either fill in at least one complete item (code, description, unit, quantity) or upload a file',
+          message:
+            'Please either fill in at least one complete item (code, description, unit, quantity) or upload a file',
           severity: 'error',
         });
         return;
@@ -250,7 +257,7 @@ export default function HomePage() {
           comment: formData.comment || undefined,
           request: formData.comment || undefined, // For compatibility with existing model
           message: formData.comment || undefined, // For compatibility with existing model
-          fullName: fullName || undefined
+          fullName: fullName || undefined,
         };
 
         const result = await createContactActionWithObject(contactData);
@@ -323,10 +330,14 @@ export default function HomePage() {
   const hasCompleteItems = useMemo(() => {
     return formData.codeItems.some(
       (item) =>
-        item.code && item.code.trim() &&
-        item.description && item.description.trim() &&
-        item.unit && item.unit.trim() &&
-        item.quantity && item.quantity.trim()
+        item.code &&
+        item.code.trim() &&
+        item.description &&
+        item.description.trim() &&
+        item.unit &&
+        item.unit.trim() &&
+        item.quantity &&
+        item.quantity.trim()
     );
   }, [formData.codeItems]);
 
@@ -667,13 +678,23 @@ export default function HomePage() {
                   </MenuItem>
                   <MenuItem value="Cristóbal Port">Cristóbal Port</MenuItem>
                   <MenuItem value="Balboa Port">Balboa Port</MenuItem>
-                  <MenuItem value="PSA Panama International Terminal (Rodman)">
-                    PSA Panama International Terminal (Rodman)
-                  </MenuItem>
-                  <MenuItem value="Panama Ports Company – Cristóbal & Balboa">
-                    Panama Ports Company – Cristóbal & Balboa
-                  </MenuItem>
+                  <MenuItem value="PSA Panama (Rodman)">PSA Panama (Rodman)</MenuItem>
                   <MenuItem value="Puerto Armuelles">Puerto Armuelles</MenuItem>
+                  <MenuItem value="Petroterminal de Panamá">Petroterminal de Panamá</MenuItem>
+                  <MenuItem value="Bahía Las Minas Terminal">Bahía Las Minas Terminal</MenuItem>
+                  <MenuItem value="COASSA Terminal">COASSA Terminal</MenuItem>
+                  <MenuItem value="Terminal MIT y CCT (Zona Libre)">
+                    Terminal MIT y CCT (Zona Libre)
+                  </MenuItem>
+                  <MenuItem value="Flamenco Marina (Amador)">Flamenco Marina (Amador)</MenuItem>
+                  <MenuItem value="La Playita Marina (Amador)">La Playita Marina (Amador)</MenuItem>
+                  <MenuItem value="Fuerte Amador Marina">Fuerte Amador Marina</MenuItem>
+                  <MenuItem value="Ocean Reef Marina & Yacht Club">
+                    Ocean Reef Marina & Yacht Club
+                  </MenuItem>
+                  <MenuItem value="Puerto Almirante (Bocas del Toro)">
+                    Puerto Almirante (Bocas del Toro)
+                  </MenuItem>
                 </TextField>
                 <TextField
                   fullWidth
@@ -780,7 +801,9 @@ export default function HomePage() {
                       fontWeight: 500,
                     }}
                   >
-                    <strong>Instruction:</strong> If you don't have code or description, you must add it manually. If you don't have that information, then upload the attached file.
+                    <strong>Instruction:</strong> If you don't have code or description, you must
+                    add it manually. If you don't have that information, then upload the attached
+                    file.
                   </Typography>
                 </Alert>
 
@@ -1020,13 +1043,14 @@ export default function HomePage() {
                       fontFamily: 'var(--font-montserrat), sans-serif',
                     }}
                   >
-                    Selected: {formData.file.name} ({(formData.file.size / 1024 / 1024).toFixed(2)} MB)
+                    Selected: {formData.file.name} ({(formData.file.size / 1024 / 1024).toFixed(2)}{' '}
+                    MB)
                   </Typography>
                 )}
               </Box>
 
-                         {/* Submit Button */}
-                         <Button
+              {/* Submit Button */}
+              <Button
                 type="submit"
                 fullWidth
                 variant="contained"
@@ -1055,8 +1079,8 @@ export default function HomePage() {
                 )}
               </Button>
 
-                          {/* Contact Information */}
-                          <Box
+              {/* Contact Information */}
+              <Box
                 sx={{
                   mt: 4,
                   pt: 3,
