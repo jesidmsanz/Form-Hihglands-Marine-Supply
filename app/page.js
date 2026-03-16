@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useTransition, useMemo } from 'react';
+import Script from 'next/script';
 import {
   Box,
   Container,
@@ -31,6 +32,8 @@ const BRAND_COLORS = {
   striingBlue: '#0F2A55',
   white: '#FFFFFF',
 };
+
+const GTAG_ID = 'AW-17854619384';
 
 export default function HomePage() {
   const [isPending, startTransition] = useTransition();
@@ -276,6 +279,13 @@ export default function HomePage() {
             }
           }
 
+          // Enviar evento de conversión a Google Ads
+          if (typeof window !== 'undefined' && window.gtag) {
+            window.gtag('event', 'conversion', {
+              send_to: `${GTAG_ID}/submit_form`,
+            });
+          }
+
           setSnackbar({
             open: true,
             message: 'Request submitted successfully! We will contact you soon.',
@@ -356,6 +366,20 @@ export default function HomePage() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
+      {/* Google Tag (gtag.js) - Google Ads */}
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GTAG_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-gtag" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GTAG_ID}');
+        `}
+      </Script>
+
       <Box
         suppressHydrationWarning
         sx={{
